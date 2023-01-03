@@ -5,16 +5,17 @@ import csv
 
 if __name__ == "__main__":
     
-    order_history_filename = "order_history_2021.txt"
+    order_history_filename = "order_history_2022.txt"
     order_history_file = open(order_history_filename)
     order_history_str = order_history_file.read()
 
     order_history : dict = json.loads(order_history_str)
 
-    print(len(order_history["edges"]), " movies found in file ", order_history_filename)
+    print(len(order_history["edges"]), " orders found in file ", order_history_filename)
 
-    # Prepare the CSV file
-    csv_headers = ["Movie Name", "Watched Date", "Ticket Cost", "Theater"]
+    # Prepare the CSV file -- these have to match the letterboxd format
+    # https://letterboxd.com/about/importing-data/
+    csv_headers = ["Title", "Watched Date", "Ticket Cost", "Theater"]
 
     csv_filename = "order_history.csv"
 
@@ -36,16 +37,18 @@ if __name__ == "__main__":
 
                 for ticket_order in order_event["node"]["groups"]:
 
-                    movies_from_order.append(ticket_order["movie"]["name"])
-                    showtimes.append(ticket_order["showtime"]["showDateTimeUtc"])
-                    theaters.append(ticket_order["theatre"]["name"])
+                    # Make sure the order isn't for a membership/concessions/etc
+                    if (ticket_order["type"].startswith("TICKET")):
+                        movies_from_order.append(ticket_order["movie"]["name"])
+                        showtimes.append(ticket_order["showtime"]["showDateTimeUtc"])
+                        theaters.append(ticket_order["theatre"]["name"])
 
-                    tickets_cost = 0
-                    
-                    for individual_ticket_order in ticket_order["items"]:
-                        tickets_cost += individual_ticket_order["cost"]
+                        tickets_cost = 0
+                        
+                        for individual_ticket_order in ticket_order["items"]:
+                            tickets_cost += individual_ticket_order["cost"]
 
-                    ticket_prices.append(tickets_cost)
+                        ticket_prices.append(tickets_cost)
 
                 if (len(movies_from_order) == len(showtimes) == len(theaters) == len(ticket_prices)):
                     for i in range(0, len(movies_from_order)):
